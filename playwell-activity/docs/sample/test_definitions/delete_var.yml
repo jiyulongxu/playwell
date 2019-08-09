@@ -1,0 +1,41 @@
+activity:
+  name: debug_var_operation
+  display_name: Context var debug
+  description: This is a test activity
+  domain_id_strategy: user_id
+
+  trigger:
+    type: event
+    args:
+      condition: eventTypeIs("user_behavior") AND eventAttr("behavior") == "加入购物车"
+    context_vars:
+      goods: eventAttr("goods")
+      price: eventAttr("price")
+      user_id: eventAttr("user_id")
+
+  actions:
+
+    - name: show_user_id
+      type: debug
+      args:
+        - str("user_id")
+      ctrl: call("delete_user_id")
+
+    - name: delete_user_id
+      type: delete_var
+      args:
+        - str("user_id")
+      ctrl: call("show_all")
+
+    - name: show_all
+      type: debug
+      args: all
+      ctrl:
+        - when: context.size() == 0
+          then: finish()
+        - default: call("delete_all")
+
+    - name: delete_all
+      type: delete_var
+      args: all
+      ctrl: call("show_all")

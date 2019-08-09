@@ -1,0 +1,84 @@
+activity:
+  name: html_to_table
+  domain_id_strategy: robot
+  config:
+    $thread_log: all
+    $monitors:
+      - service: resource.gc
+        only_repair: no
+
+  trigger:
+    type: event
+    args:
+      condition: eventAttr("cmd") == "html_to_table"
+
+  actions:
+    # 打开浏览器
+    - name: open
+      type: browser.open_web_page
+      args:
+        request:
+          browser: str("Firefox")
+          url: str("https://www.amazon.cn")
+        timeout: minutes(1)
+      ctrl:
+        - when: resultOk()
+          context_vars:
+            session_id: resultVar("session_id")
+          then: call("search")
+        - default: failBecause("open_web_page_failure")
+
+    # 搜索关键词
+    - name: search
+      type: browser.form
+      args:
+        request:
+          session_id: var("session_id")
+          input:
+            - css_selector: str("#twotabsearchtextbox")
+              input: str("Robot")
+          submit:
+            css_selector: str("#nav-search .nav-input")
+        timeout: minutes(1)
+      ctrl:
+        - when: resultOk()
+          then: call("create_table")
+        - default: failBecause("search_failure")
+
+    # 声明Table
+    - name: create_table
+      type: table.declare
+      args:
+        request:
+          table: ref("excel_table", "goods_table")
+          columns:
+            - name: str("title")
+              title: str("商品标题")
+            - name: str("price")
+              title: str("商品价格")
+          meta:
+            path: str("C:\\Users\\Administrator\\Desktop\\goods.xlsx")
+            sheet: str("商品")
+            has_title: yes
+        timeout: minutes(1)
+      ctrl:
+        - when: resultOk()
+          then: call("write_table")
+        - default: failBecause("create_table_failure")
+
+    # 解析html并填充表格
+    - name: write_table
+      type: html.to_table
+      args:
+        request:
+          html: var("session_id")
+          elements: str(".s-result-item")
+          table: ref("excel_table", "goods_table")
+          columns:
+            - element: str("h2 a")
+            - element: str(".a-price .a-offscreen")
+        timeout: minutes(1)
+      ctrl:
+        - when: resultOk()
+          then: finish()
+        - default: failBecause("write_table_failure")

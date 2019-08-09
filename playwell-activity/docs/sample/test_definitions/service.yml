@@ -1,0 +1,32 @@
+# 测试Service Action调用
+activity:
+
+  name: test_service
+  display_name: Test service action
+  domain_id_strategy: user_id
+
+  trigger:
+    type: event
+    args:
+      condition: eventTypeIs("user_behavior")
+    context_vars:
+      name: eventAttr("name")
+
+
+  actions:
+    - name: mock
+      type: mock
+      args:
+        request:
+          action: str("echo")
+          echo: str("Hello, world")
+      ctrl:
+        - when: resultOk()
+          then: call("response")
+          context_vars:
+            response: resultVar("echo")
+
+    - name: response
+      type: stdout
+      args: str($("response"))
+      ctrl: finish()

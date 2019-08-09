@@ -1,0 +1,34 @@
+activity:
+  name: test_async_repair
+  domain_id_strategy: user_id
+
+  trigger:
+    type: event
+    args:
+      condition: eventTypeIs("user_behavior")
+    context_vars:
+      name: strEventAttr("name")
+
+  actions:
+    - name: mock
+      type: mock
+      args:
+        request:
+          echo: strVar("name")
+      ctrl:
+        - when: strResultVar("echo") == "Sam"
+          then: call("stdout")
+        - default: repair("fixme")
+
+    - name: stdout
+      type: stdout
+      args: strVar("name")
+      ctrl: finish()
+
+    - name: receive
+      type: receive
+      args:
+        - when: eventTypeIs("user_behavior")
+          then: call("mock")
+          context_vars:
+            name: strEventAttr("name")

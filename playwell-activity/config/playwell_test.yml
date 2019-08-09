@@ -1,0 +1,133 @@
+playwell:
+  tz: "Asia/Shanghai"
+
+  resources:
+    - class: playwell.clock.CachedTimestamp
+      period: 100
+
+    - class: playwell.storage.jdbc.DataSourceManager
+      datasource:
+        - name: playwell
+          driver: com.mysql.cj.jdbc.Driver
+          url: 'jdbc:mysql://localhost:3306/playwell?allowPublicKeyRetrieval=true&useSSL=false&user=playwell&password=123456&useUnicode=true&characterEncoding=utf8&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai'
+          max_active: 100
+          initial_size: 10
+          max_idle: 20
+          max_wait: 5000
+          remove_abandoned: true
+
+    - class: playwell.storage.redis.RedisPoolManager
+      pools:
+        - type: common
+          name: default
+          host: 127.0.0.1
+          port: 6379
+          timeout: 2000
+          database: 0
+          max_total: 10
+          max_idle: 50
+          max_wait: 10000
+          test_on_create: true
+          test_on_borrow: true
+          test_on_return: true
+
+    - class: playwell.http.HttpServiceManager
+      services:
+        - host: 127.0.0.1
+          port: 1922
+          min_threads: 2
+          max_threads: 8
+        - host: 127.0.0.1
+          port: 1923
+          min_threads: 2
+          max_threads: 8
+
+    - class: playwell.http.NettyHttpClientHolder
+      event_loop: nio
+      n_threads: 2
+      connect_timeout: 10000
+      request_timeout: 10000
+      read_timeout: 10000
+
+    - class: playwell.api.PlaywellAPIServer
+      host: 127.0.0.1
+      port: 1922
+
+  activity_definition_manager:
+    class: playwell.activity.definition.MySQLActivityDefinitionManager
+    codecs:
+      - class: playwell.activity.definition.YAMLActivityDefinitionCodec
+    datasource: playwell
+
+  activity_manager:
+    class: playwell.activity.MySQLActivityManager
+    datasource: playwell
+    listeners:
+
+  clock:
+    class: playwell.clock.RocksDBClock
+    column_family:
+      name: clock
+    direct: false
+
+  activity_thread_pool:
+    class: playwell.activity.thread.RocksDBActivityThreadPool
+    column_family:
+      name: thread
+    direct: false
+
+  message_bus_manager:
+    class: playwell.message.bus.MySQLMessageBusManager
+    datasource: playwell
+    buses:
+      - name: activity_bus
+        class: playwell.message.bus.ConcurrentLinkedQueueMessageBus
+      - name: local_service_bus
+        class: playwell.message.bus.ConcurrentLinkedQueueMessageBus
+      - name: sync_bus1
+        class: playwell.message.bus.ConcurrentLinkedQueueMessageBus
+      - name: sync_bus2
+        class: playwell.message.bus.ConcurrentLinkedQueueMessageBus
+
+  service_meta_manager:
+    class: playwell.service.MySQLServiceMetaManager
+    datasource: playwell
+    local_services:
+      - name: mock
+        class: playwell.service.MockService
+        message_bus: local_service_bus
+      - name: add
+        class: playwell.service.AddService
+        message_bus: local_service_bus
+      - name: multiply
+        class: playwell.service.MultiplyService
+        message_bus: local_service_bus
+
+  activity_thread_scheduler:
+    listeners:
+      - name: test
+        class: playwell.activity.thread.TestActivityThreadStatusListener
+
+  service_runner:
+    input_message_bus: local_service_bus
+    sleep_time: 100
+    max_fetch_num: 100
+    max_error_num: 10
+
+  message_domain_id_strategy_manager:
+    class: playwell.message.domainid.MySQLMessageDomainIDStrategyManager
+    datasource: playwell
+
+  activity_runner:
+    service_name: playwell
+    input_message_bus: activity_bus
+    sleep_time: 10
+    max_fetch_num: 5000
+    max_error_num: 10
+    listeners:
+      - activity_definition_manager
+      - activity_manager
+      - clock
+      - activity_thread_pool
+      - message_domain_id_strategy_manager
+      - service_meta_manager

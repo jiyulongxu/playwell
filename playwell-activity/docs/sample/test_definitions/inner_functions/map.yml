@@ -1,0 +1,40 @@
+activity:
+  name: test_map_functions
+  display_name: Test map functions
+  domain_id_strategy: user_id
+
+  trigger:
+    type: event
+    args:
+      condition: eventTypeIs("user_behavior")
+    context_vars:
+      map_a:
+        name: str("SamChi")
+        age: 108
+        gender: str("male")
+      map_b:
+        name: str("Tom")
+        age: 92
+        lang: str("Python")
+
+  actions:
+
+    - name: receive
+      type: receive
+      args:
+        - when: eventAttr("behavior") == "next"
+          then: call(eventAttr("next"))
+        - when: eventAttr("behavior") == "finish"
+          then: finish()
+
+    - name: test_put
+      type: update_var
+      args:
+        map_a: map.put(mapVar("map_a"), "lang", "Java")
+        map_b: map.update(mapVar("map_b"), map("gender", "male", "grade", "A"))
+      ctrl: call("show_context")
+
+    - name: show_context
+      type: stdout
+      args: context
+      ctrl: call("receive")

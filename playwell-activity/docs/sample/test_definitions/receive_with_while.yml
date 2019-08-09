@@ -1,0 +1,39 @@
+# 测试在循环中使用receive语句
+activity:
+  name: test_receive_with_while
+  display_name: Test receive with while
+  domain_id_strategy: user_id
+
+  trigger:
+    type: event
+    args:
+      condition: eventTypeIs("user_behavior") AND eventAttr("behavior") == "提交订单"
+    context_vars:
+      order_count: 1
+      summary: eventAttr("amount")
+
+  actions:
+
+    - name: receive_user_event
+      type: receive
+      args:
+        - when: eventAttr("behavior") == "提交订单"
+          then: call("judge_order_count")
+          context_vars:
+            order_count: $("order_count") + 1
+            summary: $("summary") + eventAttr("amount")
+        - after: timestamp("3 seconds")
+          then: failBecause("timeout")
+
+
+    - name: judge_order_count
+      type: case
+      args:
+        - when: $("order_count") >= 3
+          then: call("echo")
+        - default: call("receive_user_event")
+
+    - name: echo
+      type: stdout
+      args: str('Good User! Summary:%d', $("summary"))
+      ctrl: finish()

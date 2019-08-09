@@ -1,0 +1,28 @@
+activity:
+  name: change_version
+  display_name: Change version
+  domain_id_strategy: user_id
+
+  trigger:
+    type: event
+    args:
+      condition: eventTypeIs("user_behavior")
+
+  actions:
+    - name: greeting
+      type: stdout
+      args: str("Hello, This is version 1")
+      ctrl: call("receive")
+
+    - name: receive
+      type: receive
+      args:
+        - when: eventTypeIs("user_behavior") AND eventAttr("behavior") == "注册成功"
+          then: call("bye")
+          context_vars:
+            v: str("version1")
+
+    - name: bye
+      type: stdout
+      args: var("v")
+      ctrl: finish()

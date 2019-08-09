@@ -1,0 +1,45 @@
+# 测试不同类型的Action并发
+activity:
+  name: test_concurrent_diff
+  domain_id_strategy: user_id
+
+  trigger:
+    type: event
+    args:
+      condition: eventTypeIs("user_behavior")
+    context_vars:
+      sum: 0
+
+  actions:
+    - name: concurrent
+      type: concurrent
+      args:
+        actions:
+          - name: str("add")
+          - name: str("multiply")
+        default_result_handle:
+          - when: resultOk()
+            context_vars:
+              sum: $("sum") + resultVar("result")
+        ctrl:
+          - after: timestamp("2 seconds")
+            then: call("end")
+
+    - name: add
+      type: add
+      args:
+        request:
+          a: $("sum")
+          b: 100
+
+    - name: multiply
+      type: multiply
+      args:
+        request:
+          a: $("sum")
+          b: 2
+
+    - name: end
+      type: stdout
+      args: str("All Finished, sum = %d", $("sum"))
+      ctrl: finish()

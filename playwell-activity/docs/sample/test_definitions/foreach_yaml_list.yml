@@ -1,0 +1,35 @@
+# Foreach yaml list
+activity:
+  name: foreach_yaml_list
+  display_name: Foreach yaml list
+  domain_id_strategy: user_id
+
+  trigger:
+    type: event
+    args:
+      condition: eventTypeIs("user_behavior")
+
+  actions:
+
+    - name: foreach
+      type: foreach
+      args:
+        items:
+          - name: str("迟宏泽")
+            age: 29
+            job: str("无业游民")
+
+          - name: str("金正恩")
+            age: 35
+            job: str("最高司令官")
+
+          - name: str("虫也")
+            age: 92
+            job: str("God")
+        next: call("debug")
+        finish: finish()
+
+    - name: debug
+      type: debug
+      args: list("$foreach.idx", "$foreach.ele")
+      ctrl: call("foreach")

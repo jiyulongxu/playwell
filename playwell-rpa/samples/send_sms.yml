@@ -1,0 +1,25 @@
+activity:
+  name: send_sms
+  domain_id_strategy: robot
+  config:
+    $thread_log: all
+
+  trigger:
+    type: event
+    args:
+      condition: eventAttr("cmd") == "send_sms"
+
+  actions:
+    - name: huawei.sms
+      args:
+        request:
+          to: str("17600817832")
+          template_id: str("8856354b9b7e495fb6bd933882b9f9db")
+          template_params:
+            - str("Chihz")
+          signature: str("企智未来")
+        timeout: minutes(1)
+      ctrl:
+        - when: resultOk()
+          then: finish()
+        - default: fail()

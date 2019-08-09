@@ -1,0 +1,18 @@
+## Compute activity definition
+activity:
+  name: test_compute
+  domain_id_strategy: user_id
+
+  trigger: eventAttr("behavior") == "test_compute"
+
+  actions:
+    - name: compute
+      args:
+        - a: 1 + 1
+        - b: 1 + var("a")
+        - c: 1 + var("b")
+      ctrl: call("stdout")
+
+    - name: stdout
+      args: 'str("A: %d, B: %d, C: %d", var("a"), var("b"), var("c"))'
+      ctrl: finish()

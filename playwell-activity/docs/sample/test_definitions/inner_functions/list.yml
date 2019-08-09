@@ -1,0 +1,129 @@
+# 测试列表函数
+activity:
+  name: test_list_functions
+  display_name: Test list functions
+  domain_id_strategy: user_id
+  config:
+    text: ChiHongze is a good man
+
+  trigger:
+    type: event
+    args:
+      condition: eventTypeIs("user_behavior")
+    context_vars:
+      split_result: split(config("text"), " ")
+      numbers_a: list(1, 3, 4, 5, 6)
+      numbers_b: range(0, 7)
+      numbers_c: list(1, 2, 3, 3, 4, 4, 4, 5, 5, 6)
+      numbers_d: list(1, 2, 3, 3, 4, 4, 4, 5, 5)
+      decimal_list: list(1, "2", "3.141592654", "4", toDecimal(5, 2, "FLOOR"))
+
+  actions:
+    - name: foreach
+      type: foreach
+      args:
+        items: list(
+          "test_add",
+          "test_join",
+          "test_remove",
+          "test_set",
+          "test_shuffle",
+          "test_sort",
+          "test_reverse",
+          "test_count",
+          "test_min_max",
+          "test_random_choice",
+          "test_add_order"
+          )
+        next: call($("$foreach.ele"))
+        finish: finish()
+
+    - name: test_add
+      type: update_var
+      args:
+        split_result: list.add($("split_result"), "!")
+        numbers_a: list.add($("numbers_a"), 1, 2)
+        numbers_b: list.addDistinct($("numbers_b"), 2)
+      ctrl: call("show_context")
+
+    - name: test_join
+      type: update_var
+      args:
+        joined_text: list.join(var("split_result"), " ")
+      ctrl: call("show_context")
+
+    - name: test_remove
+      type: update_var
+      args:
+        split_result: list.removeByElement(var("split_result"), "!")
+        numbers_b: list.removeByIndex(var("numbers_b"), 0)
+        numbers_c: list.distinct(var("numbers_c"))
+      ctrl: call("show_context")
+
+    - name: test_set
+      type: update_var
+      args:
+        split_result: list.set(var("split_result"), 0, "Chihz")
+      ctrl: call("show_context")
+
+    - name: test_shuffle
+      type: update_var
+      args:
+        numbers_c: list.shuffle(var("numbers_c"))
+      ctrl: call("show_context")
+
+    - name: test_sort
+      type: update_var
+      args:
+        numbers_c: list.sort(var("numbers_c"))
+      ctrl: call("show_context")
+
+    - name: test_reverse
+      type: update_var
+      args:
+        numbers_c: list.reverse(var("numbers_c"))
+      ctrl: call("show_context")
+
+    - name: test_count
+      type: update_var
+      args:
+        count: list.count(var("numbers_d"), 4)
+        group_count: list.groupCount(var("numbers_d"))
+      ctrl: call("show_context")
+
+    - name: test_min_max
+      type: update_var
+      args:
+        min: list.min(list.shuffle(var("numbers_c")))
+        max: list.max(list.shuffle(var("numbers_c")))
+      ctrl: call("show_context")
+
+    - name: test_random_choice
+      type: update_var
+      args:
+        random_element: list.randomChoice(var("numbers_c"))
+      ctrl: call("show_context")
+
+    - name: test_add_order
+      type: foreach
+      args:
+        items: list(3, 6, 4, 7, 8, 2, 2, 5, 4)
+        next: call("do_add_order")
+        finish: call("show_context")
+
+    - name: do_add_order
+      type: update_var
+      args:
+        order_list: list.addOrder(var("order_list", list()), var("$test_add_order.ele"))
+      ctrl: call("test_add_order")
+
+    - name: show_context
+      type: stdout
+      args: context
+      ctrl: call("waiting_next_test")
+
+    - name: waiting_next_test
+      type: receive
+      args:
+        - when: eventAttr("behavior") == "next"
+          then: call("foreach")

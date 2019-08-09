@@ -1,0 +1,32 @@
+# 测试重试操作
+activity:
+  name: test_retry
+  display_name: Test retry
+  domain_id_strategy: user_id
+
+  trigger: eventTypeIs("user_behavior") AND eventAttr("behavior") == "注册成功"
+
+  actions:
+
+    - name: greeting
+      type: stdout
+      args: str("Hello, user!")
+      ctrl: call("receive")
+
+    - name: receive
+      type: receive
+      args:
+        - when: eventAttr("behavior") == "提交订单"
+          then: call("bye")
+        - after: seconds(2)
+          then: retry(3, call("retry_failure"))
+
+    - name: bye
+      type: stdout
+      args: str("Bye!")
+      ctrl: finish()
+
+    - name: retry_failure
+      type: stdout
+      args: str("Retry failure")
+      ctrl: failBecause("retry_failure")

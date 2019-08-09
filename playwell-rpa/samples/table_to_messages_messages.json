@@ -1,0 +1,9 @@
+[
+  {
+    "type": "robot",
+    "attr": {
+      "robot_id": 1,
+      "cmd": "table_to_messages"
+    }
+  }
+]

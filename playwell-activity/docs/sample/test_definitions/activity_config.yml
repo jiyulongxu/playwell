@@ -1,0 +1,24 @@
+# 测试ActivityConfig的引用
+activity:
+  name: test_activity_config
+  display_name: Test activity config
+  domain_id_strategy: user_id
+  config:
+    TEXT_A: "Hello"
+    TEXT_B: "How are you"
+    TEXT_C: "Fine thank you, and you?"
+
+  trigger:
+    type: event
+    args:
+      condition: eventTypeIs("user_behavior")
+    context_vars:
+      a: config("TEXT_A", "")
+      b: config("TEXT_B", "")
+      c: config("TEXT_C", "")
+
+  actions:
+    - name: echo
+      type: stdout
+      args: context
+      ctrl: finish()

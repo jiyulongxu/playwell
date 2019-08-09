@@ -1,0 +1,9 @@
+[
+  {
+    "type": "robot",
+    "attr": {
+      "robot_id": 5,
+      "cmd": "send_sms"
+    }
+  }
+]

@@ -1,0 +1,31 @@
+activity:
+  name: test_myadd
+  domain_id_strategy: cmd
+  config:
+    $thread_log: all
+
+  trigger:
+    type: event
+    args:
+      condition: eventAttr("cmd") == "add"
+    context_vars:
+      a: eventAttr("a")
+      b: eventAttr("b")
+
+  actions:
+    - name: myadd
+      args:
+        request:
+          a: var("a")
+          b: var("b")
+        timeout: minutes(1)
+      ctrl:
+        - when: resultOk()
+          context_vars:
+            result: resultVar("result")
+          then: call("stdout")
+        - default: failBecause("myadd_failure")
+
+    - name: stdout
+      args: var("result")
+      ctrl: finish()

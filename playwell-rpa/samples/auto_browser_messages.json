@@ -1,0 +1,9 @@
+[
+  {
+    "type": "robot",
+    "attr": {
+      "robot_id": 1,
+      "cmd": "auto_browser"
+    }
+  }
+]

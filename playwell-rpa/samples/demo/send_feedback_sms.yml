@@ -1,0 +1,53 @@
+activity:
+  name: send_feedback_sms
+  domain_id_strategy: audience_phone
+  config:
+    $thread_log: all
+
+  trigger:
+    type: event
+    args:
+      condition: eventTypeIs("audience_notify")
+    context_vars:
+      name: eventAttr("name")
+      phone: str("%s", eventAttr("phone"))
+
+  actions:
+    # 调用华为云接口发送短信
+    - name: huawei.sms
+      args:
+        request:
+          to: var("phone")
+          template_id: str("8856354b9b7e495fb6bd933882b9f9db")
+          template_params:
+            - var("name")
+          signature: str("企智未来")
+        timeout: minutes(1)
+      ctrl:
+        - when: resultOk()
+          then: call("waiting_feedback")
+        - default: fail()
+
+    # 等待feedback短信
+    - name: waiting_feedback
+      type: receive
+      args:
+        - when: eventTypeIs("audience_feedback")
+          context_vars:
+            feedback: eventAttr("content")
+          then: call("save_feedback")
+
+    # 保存feedback内容
+    - name: save_feedback
+      type: sql
+      args:
+        request:
+          sql: str("insert into feedback(phone, feedback) values (%s, %s)")
+          params:
+            - var("phone")
+            - var("feedback")
+        timeout: minutes(1)
+      ctrl:
+        - when: resultOk()
+          then: finish()
+        - default: fail()

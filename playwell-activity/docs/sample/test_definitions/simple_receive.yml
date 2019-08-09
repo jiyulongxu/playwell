@@ -1,0 +1,44 @@
+# 针对Receive Action的简单测试
+activity:
+  name: simple_receive
+  display_name: Test simple receive action
+  domain_id_strategy: user_id
+
+  trigger:
+    type: event
+    args:
+      condition: eventTypeIs("user_behavior")
+
+  actions:
+
+    - name: echo
+      type: stdout
+      args:
+        - str("Start running")
+      ctrl: call("receive_event")
+
+    - name: receive_event
+      type: receive
+      args:
+        - when: eventTypeIs("user_behavior") AND eventAttr("behavior") == "提交订单"
+          then: call("say_behavior")
+          context_vars:
+            behavior: eventAttr("behavior")
+        - when: eventTypeIs("user_behavior") AND eventAttr("behavior") == "注册"
+          then: call("say_behavior")
+          context_vars:
+            behavior: eventAttr("behavior")
+        - after: timestamp("10 seconds")
+          then: call("say_timeout")
+          context_vars:
+            timepoint: timestamp()
+
+    - name: say_behavior
+      type: debug
+      args: list("behavior")
+      ctrl: finish()
+
+    - name: say_timeout
+      type: debug
+      args: list("timepoint")
+      ctrl: finish()

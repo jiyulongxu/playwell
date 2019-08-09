@@ -1,0 +1,24 @@
+# Test service without await
+
+activity:
+  name: service_without_await
+  domain_id_strategy: user_id
+
+  trigger:
+    type: event
+    args:
+      condition: eventTypeIs("user_behavior")
+
+  actions:
+    - name: add
+      args:
+        request:
+          a: 1
+          b: 2
+          sleep: 5
+      await: no
+      ctrl: call("stdout")
+
+    - name: stdout
+      args: str("finished")
+      ctrl: finish()

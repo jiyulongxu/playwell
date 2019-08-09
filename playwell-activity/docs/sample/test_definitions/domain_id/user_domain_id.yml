@@ -1,0 +1,27 @@
+# 以用户ID作为Domain ID的活动
+activity:
+  name: test_user_domain_id
+  domain_id_strategy: user_id
+
+  trigger:
+    type: event
+    args:
+      condition: eventTypeIs("user_behavior")
+    context_vars:
+      user_id: strEventAttr("user_id")
+
+  actions:
+    - name: receive
+      type: receive
+      args:
+        - when: strEventAttr("behavior") == "提交订单"
+          then: call("sleep")
+    - name: sleep
+      type: sleep
+      args:
+        time: timestamp("3 seconds")
+      ctrl: call("report")
+    - name: report
+      type: stdout
+      args: str("用户%s提交了订单", $("user_id"))
+      ctrl: finish()

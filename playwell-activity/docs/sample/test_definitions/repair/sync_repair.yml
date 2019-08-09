@@ -1,0 +1,33 @@
+# 测试SyncAction的repair操作
+activity:
+  name: test_sync_repair
+  domain_id_strategy: user_id
+
+  trigger:
+    type: event
+    args:
+      condition: eventTypeIs("user_behavior")
+    context_vars:
+      num: intEventAttr("num")
+
+  actions:
+
+    - name: case
+      type: case
+      args:
+        - when: intVar("num") % 2 == 0
+          then: repair("test")
+        - default: call("stdout")
+
+    - name: stdout
+      type: stdout
+      args: intVar("num")
+      ctrl: finish()
+
+    - name: receive
+      type: receive
+      args:
+        - when: strEventAttr("behavior") == "添加购物车"
+          then: call("case")
+          context_vars:
+            num: intVar("num") * 2

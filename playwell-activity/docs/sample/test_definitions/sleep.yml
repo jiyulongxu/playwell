@@ -1,0 +1,30 @@
+# 每隔1秒钟，输出计数值，直到5为止
+activity:
+  name: test_sleep
+  display_name: test sleep action
+  domain_id_strategy: user_id
+
+  trigger:
+    type: event
+    args:
+      condition: eventTypeIs("user_behavior")
+
+  actions:
+
+    - name: sleep
+      type: sleep
+      args:
+        time: timestamp("1 seconds")
+      ctrl:
+        - default: call("debug")
+          context_vars:
+            count: $("count", 0) + 1
+
+    - name: debug
+      type: debug
+      args:
+        - str("count")
+      ctrl:
+        - when: $("count") == 5
+          then: finish()
+        - default: call("sleep")

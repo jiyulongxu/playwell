@@ -1,0 +1,9 @@
+[
+  {
+    "type": "robot",
+    "attr": {
+      "robot_id": 6,
+      "cmd": "execute_sql"
+    }
+  }
+]

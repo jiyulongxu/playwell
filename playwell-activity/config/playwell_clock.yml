@@ -1,0 +1,30 @@
+playwell:
+  tz: "Asia/Shanghai"
+
+  resources:
+    - class: playwell.clock.CachedTimestamp
+      period: 100
+
+  clock:
+    class: playwell.clock.MemoryClock
+
+  message_bus_manager:
+    class: playwell.message.bus.MemoryMessageBusManager
+    datasource: playwell
+    message_bus:
+      - name: clock_bus
+        class: playwell.message.bus.ConcurrentLinkedQueueMessageBus
+      - name: test_bus
+        class: playwell.message.bus.ConcurrentLinkedQueueMessageBus
+
+  service_meta_manager:
+    class: playwell.service.MemoryServiceMetaManager
+    datasource: playwell
+    remote_services:
+      - name: test_service
+        message_bus: test_bus
+
+  clock_runner:
+    class: playwell.clock.ClockRunner
+    service: clock_runner
+    input_message_bus: clock_bus

@@ -1,0 +1,12 @@
+activity:
+  name: scan_clock
+  domain_id_strategy: user_id
+
+  trigger: eventTypeIs("user_behavior")
+
+  actions:
+    - name: sleep
+      type: sleep
+      args:
+        time: hours(1)
+      ctrl: finish()

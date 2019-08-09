@@ -1,0 +1,66 @@
+# 针对同一类型的ConcurrentAction进行测试
+activity:
+  name: test_concurrent_action
+  domain_id_strategy: user_id
+
+  trigger:
+    type: event
+    args:
+      condition: eventTypeIs("user_behavior")
+    context_vars:
+      user_id: eventAttr("user_id")
+
+  actions:
+
+    - name: concurrent
+      type: concurrent
+      args:
+        actions:
+          - name: str("echo_a")
+            result_handle:
+              - when: resultOk()
+                context_vars:
+                  a: true
+                  a_content: resultVar("echo")
+          - name: str("echo_b")
+          - name: str("echo_c")
+            result_handle:
+              - when: resultOk()
+                context_vars:
+                  c: true
+                  c_content: resultVar("echo")
+
+        default_result_handle:
+          - when: resultOk()
+            context_vars:
+              b: true
+              b_content: resultVar("echo")
+
+        ctrl:
+          - when: all($("a", null), $("b", null), $("c", null))
+            then: call("end")
+          - after: timestamp("3 seconds")
+            then: failBecause("timeout")
+
+    - name: echo_a
+      type: mock
+      args:
+        request:
+          echo: str("a")
+
+    - name: echo_b
+      type: mock
+      args:
+        request:
+          echo: str("b")
+
+    - name: echo_c
+      type: mock
+      args:
+        request:
+          echo: str("c")
+
+    - name: end
+      type: stdout
+      args: str("Test finished!")
+      ctrl: finish()

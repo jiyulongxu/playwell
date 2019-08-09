@@ -1,0 +1,41 @@
+# 测试ConcurrentAction的超时设置
+activity:
+  name: test_concurrent_action_timeout
+  domain_id_strategy: user_id
+
+  trigger:
+    type: event
+    args:
+      condition: eventTypeIs("user_behavior")
+
+  actions:
+    - name: concurrent
+      type: concurrent
+      args:
+        actions:
+          - name: str("echo_a")
+          - name: str("echo_timeout")
+        default_result_handle:
+          - when: result.isOk()
+            context_vars:
+              success: $("success", 0) + 1
+        ctrl:
+          - when: $("success") >= 2
+            then: finish()
+          - after: timestamp("2 seconds")
+            then: failBecause("timeout")
+
+    - name: echo_a
+      type: mock
+      args:
+        request:
+          action: str("echo")
+          echo: str("a")
+
+    - name: echo_timeout
+      type: mock
+      args:
+        request:
+          action: str("timeout")
+          time: timestamp("5 seconds")
+          echo: str("b")

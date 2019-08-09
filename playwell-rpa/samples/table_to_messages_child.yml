@@ -1,0 +1,19 @@
+activity:
+  name: table_to_messages_child
+  domain_id_strategy: std
+  config:
+    $thread_log: all
+
+  trigger:
+    type: event
+    args:
+      condition: eventTypeIs("show_student_info")
+    context_vars:
+      id: eventAttr("ID")
+      name: eventAttr("Name")
+      phone: eventAttr("Phone")
+
+  actions:
+    - name: stdout
+      args: str("%s - %s - %s", var("id"), var("name"), var("phone"))
+      ctrl: finish()

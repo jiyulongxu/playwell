@@ -1,0 +1,45 @@
+# test table to list
+activity:
+  name: table_to_list
+  domain_id_strategy: robot
+  config:
+    $thread_log: all
+
+  trigger:
+    type: event
+    args:
+      condition: eventAttr("cmd") == "table_to_list"
+
+  actions:
+    # 声明table
+    - name: declare_table
+      type: table.declare
+      args:
+        request:
+          table: ref("excel_table", "mytable")
+          meta:
+            path: str("/Users/chihongze/Desktop/students.xlsx")
+            sheet: str("students")
+            has_title: yes
+        timeout: minutes(1)
+      ctrl:
+        - when: resultOk()
+          then: call("to_list")
+        - default: failBecause("declare_table_failure")
+
+    - name: to_list
+      type: table.to_list
+      args:
+        request:
+          table: ref("excel_table", "mytable")
+        timeout: minutes(1)
+      ctrl:
+        - when: resultOk()
+          context_vars:
+            list: resultVar("list")
+          then: call("stdout")
+        - default: failBecause("to_list_failure")
+
+    - name: stdout
+      args: var("list")
+      ctrl: finish()

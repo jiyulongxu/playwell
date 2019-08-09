@@ -1,0 +1,69 @@
+playwell_api: "http://localhost:1922"
+
+input_message_bus:
+  name: test_input_message_bus
+  class: playwell.message.bus.HttpMessageBus
+  url: "http://localhost:12345/input"
+
+web_server:
+  host: localhost
+  port: 12345
+
+web_driver:
+  Firefox:
+    executable_path: "/usr/local/bin/geckodriver"
+
+config_hook: playwell_rpa.config.load_config
+launch_hook: playwell_rpa.launcher.launch
+
+local_service:
+  - name: myadd
+    service: playwell.service.test.add
+
+  # 浏览器相关
+  - name: browser.open_web_page
+    service: playwell_rpa.browser.action.open_web_page
+  - name: browser.close
+    service: playwell_rpa.browser.action.close_browser
+  - name: browser.click
+    service: playwell_rpa.browser.action.click
+  - name: browser.selenium
+    service: playwell_rpa.browser.action.execute_selenium_script
+  - name: browser.form
+    service: playwell_rpa.browser.form.submit_form
+
+  # Table相关
+  - name: table.declare
+    service: playwell_rpa.data.table.declare_new_table
+  - name: table.to_list
+    service: playwell_rpa.data.table.table_to_list
+  - name: table.to_messages
+    service: playwell_rpa.data.table.table_to_messages
+
+  # Html解析相关
+  - name: html.to_table
+    service: playwell_rpa.html_content.to_table
+
+  # Cloud Service
+  - name: huawei.sms
+    service: playwell_rpa.cloud.huawei.sms.BatchSendService
+    config:
+      app_key: "m97WWjK5FtIV7h29jsnWCWDb4I8e"
+      app_secret: "F13400QeCtVjUQ5Vm74Sj8zIw805"
+      channel_id: "8819080633619"
+      api_base: "https://api.rtc.huaweicloud.com:10443"
+      signature: "企智未来"
+
+  - name: sql
+    service: playwell_rpa.mysql.ExecuteSQL
+    config:
+      host: "localhost"
+      port: 3306
+      user: "playwell"
+      password: "123456"
+      db: "playwell_test"
+      charset: "utf8mb4"
+
+  # 资源相关
+  - name: resource.gc
+    service: playwell_rpa.resource.gc

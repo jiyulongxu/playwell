@@ -1,0 +1,24 @@
+activity:
+  name: execute_sql
+  domain_id_strategy: robot
+  config:
+    $thread_log: all
+
+  trigger:
+    type: event
+    args:
+      condition: eventAttr("cmd") == "execute_sql"
+
+  actions:
+    - name: sql
+      args:
+        request:
+          sql: str("insert into test(phone, comment) values (%s, %s)")
+          params:
+            - str("17600817832")
+            - str("hahahaha")
+        timeout: minutes(1)
+      ctrl:
+        - when: resultOk()
+          then: finish()
+        - default: fail()

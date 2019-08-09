@@ -1,0 +1,13 @@
+playwell_api: "http://localhost:1922"
+
+log:
+  filename: sms_receiver.log
+
+web_server:
+  host: 0.0.0.0
+  port: 54321
+
+redirect_message_bus: activity_bus_rpa
+
+runner:
+  only_refresh: yes

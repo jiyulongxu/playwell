@@ -1,0 +1,14 @@
+playwell_api: "http://localhost:1922"
+
+input_message_bus:
+  name: test_input_message_bus
+  class: playwell.message.bus.HttpMessageBus
+  url: "http://localhost:12345/input"
+
+web_server:
+  host: localhost
+  port: 12345
+
+local_service:
+  - name: myadd
+    service: playwell.service.test.add

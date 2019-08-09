@@ -1,0 +1,42 @@
+activity:
+  name: auto_browser
+  domain_id_strategy: robot
+  config:
+    $thread_log: all
+
+  trigger:
+    type: event
+    args:
+      condition: eventAttr("cmd") == "auto_browser"
+
+  actions:
+    - name: open
+      type: browser.open_web_page
+      args:
+        request:
+          browser: str("Firefox")
+          url: str("https://www.baidu.com")
+          save_source: ref("file_text", "test_html", map("path", "/tmp/test.html"))
+        timeout: minutes(1)
+      ctrl:
+        - when: resultOk()
+          context_vars:
+            session_id: resultVar("session_id")
+          then: call("sleep")
+        - default: failBecause("open_web_page_failure")
+
+    - name: sleep
+      args:
+        time: seconds(10)
+      ctrl: call("close")
+
+    - name: close
+      type: browser.close
+      args:
+        request:
+          session_id: var("session_id")
+        timeout: minutes(1)
+      ctrl:
+        - when: resultOk()
+          then: finish()
+        - default: failBecause("close_browser_failure")

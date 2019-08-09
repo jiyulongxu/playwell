@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+  <Appenders>
+    <Console name="Console" target="SYSTEM_OUT">
+      <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+    </Console>
+    <File fileName="playwell.log" name="File">
+      <PatternLayout>
+        <pattern>%d %p %C{1.} [%t] %m%n</pattern>
+      </PatternLayout>
+    </File>
+    <File fileName="profile.log" name="Profile">
+      <PatternLayout>
+        <pattern>%d %p %C{1.} [%t] %m%n</pattern>
+      </PatternLayout>
+    </File>
+    <File fileName="scan.log" name="Scan">
+      <PatternLayout>
+        <pattern>%d %p %C{1.} [%t] %m%n</pattern>
+      </PatternLayout>
+    </File>
+  </Appenders>
+  <Loggers>
+    <Logger additivity="false" level="INFO" name="scan">
+      <AppenderRef ref="Scan"/>
+    </Logger>
+    <Logger additivity="false" level="ERROR" name="profile">
+      <AppenderRef ref="Profile"/>
+    </Logger>
+    <Logger additivity="false" level="ERROR" name="debug_context">
+      <AppenderRef ref="File"/>
+    </Logger>
+    <Logger additivity="false" level="ERROR" name="activity_thread">
+      <AppenderRef ref="File"/>
+    </Logger>
+    <Root level="INFO">
+      <AppenderRef ref="File"/>
+    </Root>
+  </Loggers>
+</Configuration>

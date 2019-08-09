@@ -1,0 +1,34 @@
+# The child activity
+activity:
+  name: child
+  display_name: The child activity
+  domain_id_strategy: user_id
+
+  trigger:
+    type: event
+    args:
+      condition: eventTypeIs("create_child")
+    context_vars:
+      user_id: strEventAttr("user_id")
+
+  actions:
+
+    - name: echo
+      type: stdout
+      args: str("I am child activity.")
+      ctrl: call("send")
+
+    - name: send
+      type: send
+      args:
+        service: str("playwell")
+        messages:
+          - type: str("subprocess_response")
+            attributes:
+              user_id: strVar("user_id")
+      ctrl: call("bye")
+
+    - name: bye
+      type: stdout
+      args: str("Child activity finished!")
+      ctrl: finish()

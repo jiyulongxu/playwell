@@ -1,0 +1,62 @@
+playwell:
+  tz: "Asia/Shanghai"
+
+  resources:
+    - class: playwell.clock.CachedTimestamp
+      period: 100
+
+    - class: playwell.storage.jdbc.DataSourceManager
+      datasource:
+        - name: playwell
+          driver: com.mysql.jdbc.Driver
+          url: 'jdbc:mysql://localhost:3306/playwell?useSSL=false&user=playwell&password=123456&useUnicode=true&characterEncoding=utf8&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai'
+          max_active: 100
+          initial_size: 10
+          max_idle: 20
+          max_wait: 5000
+          remove_abandoned: true
+
+  message_bus_manager:
+    class: playwell.message.bus.MySQLMessageBusManager
+    datasource: playwell
+    buses:
+      - name: route_bus
+        class: playwell.message.bus.ConcurrentLinkedQueueMessageBus
+      - name: local_service_bus
+        class: playwell.message.bus.ConcurrentLinkedQueueMessageBus
+      - name: runner_a_bus
+        class: playwell.message.bus.ConcurrentLinkedQueueMessageBus
+      - name: runner_b_bus
+        class: playwell.message.bus.ConcurrentLinkedQueueMessageBus
+      - name: runner_c_bus
+        class: playwell.message.bus.ConcurrentLinkedQueueMessageBus
+      - name: migration_bus
+        class: playwell.message.bus.ConcurrentLinkedQueueMessageBus
+
+  service_meta_manager:
+    class: playwell.service.MySQLServiceMetaManager
+    datasource: playwell
+    local_services:
+      - name: mock
+        class: playwell.service.MockService
+        message_bus: local_service_bus
+      - name: add
+        class: playwell.service.AddService
+        message_bus: local_service_bus
+      - name: multiply
+        class: playwell.service.MultiplyService
+        message_bus: local_service_bus
+
+  message_domain_id_strategy_manager:
+    class: playwell.message.domainid.MySQLMessageDomainIDStrategyManager
+    datasource: playwell
+
+  slots_manager:
+    datasource: playwell
+
+  message_route:
+    input_message_bus: route_bus
+    listeners:
+      - service_meta_manager
+      - message_domain_id_strategy_manager
+      - slots_manager

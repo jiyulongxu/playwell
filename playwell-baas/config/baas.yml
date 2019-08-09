@@ -1,0 +1,59 @@
+playwell:
+  tz: "Asia/Shanghai"
+
+  resources:
+    - class: playwell.clock.CachedTimestamp
+      period: 100
+
+    - class: playwell.storage.jdbc.DataSourceManager
+      datasource:
+        - name: playwell
+          driver: com.mysql.cj.jdbc.Driver
+          url: 'jdbc:mysql://localhost:3306/playwell?allowPublicKeyRetrieval=true&useSSL=false&user=playwell&password=123456&useUnicode=true&characterEncoding=utf8&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai'
+          max_active: 100
+          initial_size: 10
+          max_idle: 20
+          max_wait: 5000
+          remove_abandoned: true
+
+    - class: playwell.storage.redis.RedisPoolManager
+      pools:
+        - type: common
+          name: default
+          host: 127.0.0.1
+          port: 6379
+          timeout: 2000
+          database: 0
+          max_total: 10
+          max_idle: 50
+          max_wait: 10000
+          test_on_create: true
+          test_on_borrow: true
+          test_on_return: true
+
+  message_bus_manager:
+    class: playwell.message.bus.MemoryMessageBusManager
+    message_bus:
+      - name: activity_bus
+        class: playwell.message.bus.ConcurrentLinkedQueueMessageBus
+      - name: local_service_bus
+        class: playwell.message.bus.ConcurrentLinkedQueueMessageBus
+
+  service_meta_manager:
+    class: playwell.service.MySQLServiceMetaManager
+    datasource: playwell
+    local_services:
+      - name: redis_domain
+        class: playwell.baas.domain.DomainService
+        message_bus: local_service_bus
+        domain_types:
+          - type: user
+            storage: redis
+            redis_resource: default
+            namespace: "p:u"
+
+  service_runner:
+    input_message_bus: local_service_bus
+    sleep_time: 10
+    max_fetch_num: 5000
+    max_error_num: 10

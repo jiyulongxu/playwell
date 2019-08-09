@@ -1,0 +1,20 @@
+activity:
+  name: test_math_functions
+  display_name: Test math functions
+  domain_id_strategy: user_id
+
+  trigger:
+    type: event
+    args:
+      condition: eventTypeIs("user_behavior")
+    context_vars:
+      a: -1
+      b: 3.14
+
+  actions:
+    - name: math
+      type: update_var
+      args:
+        a: math.abs(intVar("a"))
+        b: math.floor(doubleVar("b"))
+      ctrl: finish()

@@ -1,0 +1,36 @@
+# 测试计数器函数
+activity:
+  name: test_counter
+  display_name: Test counter
+  domain_id_strategy: user_id
+
+  trigger:
+    type: event
+    args:
+      condition: eventTypeIs("user_behavior")
+    context_vars:
+      counter_a: counter("a", "b", "c", "c" , "d", "e", "e", "e")
+      counter_b: counter()
+
+  actions:
+
+    - name: receive
+      type: receive
+      args:
+        - when: strEventAttr("behavior") == "next"
+          then: call(eventAttr("next"))
+        - when: strEventAttr("behavior") == "finished"
+          then: finish()
+
+    - name: test_incr
+      type: update_var
+      args:
+        counter_a: counter.incr(var("counter_a"), "a", 5)
+        counter_b: counter.incr(var("counter_b"), "x")
+      ctrl: call("receive")
+
+    - name: test_most_common
+      type: update_var
+      args:
+        most_common: counter.mostCommon(var("counter_a"), 3)
+      ctrl: call("receive")

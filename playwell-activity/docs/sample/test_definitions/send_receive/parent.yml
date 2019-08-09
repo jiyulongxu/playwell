@@ -1,0 +1,46 @@
+# 模拟父子进程关系
+# 向ActivityRunner自身发送一个事件，来唤醒一个新的ActivityThread
+# 然后等待新ActivityThread的执行结果
+activity:
+  name: parent
+  display_name: The parent activity
+  domain_id_strategy: user_id
+
+  trigger:
+    type: event
+    args:
+      condition: eventTypeIs("user_behavior")
+    context_vars:
+      user_id: strEventAttr("user_id")
+
+  actions:
+
+    - name: echo
+      type: stdout
+      args: str("The parent activity start!")
+      ctrl: call("send")
+
+    - name: send
+      type: send
+      args:
+        service: str("playwell")
+        messages:
+          - type: str("create_child")
+            attributes:
+              user_id: strVar("user_id")
+      ctrl: call("receive")
+
+    - name: receive
+      type: receive
+      args:
+        - when: eventTypeIs("subprocess_response")
+          then: call("echo_response")
+          context_vars:
+            response: event
+        - after: timestamp("10 seconds")
+          then: failBecause("timeout")
+
+    - name: echo_response
+      type: stdout
+      args: $("response")
+      ctrl: finish()

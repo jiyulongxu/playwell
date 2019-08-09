@@ -1,0 +1,35 @@
+# 测试上下文变量操作的相关Action，无限循环
+activity:
+  name: debug_var_operation
+  display_name: Context var debug
+  description: This is a test activity
+  domain_id_strategy: user_id
+
+  trigger:
+    type: event
+    args:
+      condition: eventTypeIs("user_behavior") AND eventAttr("behavior") == "加入购物车"
+    context_vars:
+      goods: eventAttr("goods")
+      price: eventAttr("price")
+      user_id: eventAttr("user_id")
+
+  actions:
+    # 输出所有的上下文变量
+    - name: debug_all
+      type: debug
+      args: all
+      ctrl:
+        - when: $("count", 0) < 5
+          then: call("debug_var")
+          context_vars:
+            count: $("count", 0) + 1
+        - default: finish()
+
+    # 输出指定的上下文变量
+    - name: debug_var
+      type: debug
+      args:
+        - str("price")
+        - str("user_id")
+      ctrl: call("debug_all")

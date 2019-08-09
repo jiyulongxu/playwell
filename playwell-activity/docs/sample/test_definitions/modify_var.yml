@@ -1,0 +1,33 @@
+# 测试递归累加上下文变量
+activity:
+  name: modify_var_operation
+  display_name: Context var modification
+  description: This is a test activity
+  domain_id_strategy: user_id
+
+  trigger:
+    type: event
+    args:
+      condition: eventTypeIs("user_behavior") AND eventAttr("behavior") == "加入购物车"
+    context_vars:
+      goods: eventAttr("goods")
+      price: eventAttr("price")
+      user_id: eventAttr("user_id")
+
+  actions:
+    - name: count
+      type: update_var
+      args:
+        count: $("count", 0) + 1
+      ctrl:
+        - when: $("count", 0) == 100000
+          then: finish()
+        - when: $("count") % 10000 == 0
+          then: call("debug_var")
+        - default: call("count")
+
+    - name: debug_var
+      type: debug
+      args:
+        - str("count")
+      ctrl: call("count")

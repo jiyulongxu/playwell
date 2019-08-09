@@ -1,0 +1,30 @@
+# 以用户ID_订单ID作为DomainID的活动
+activity:
+  name: test_user_id_order_id
+  domain_id_strategy: user_id_order_id
+
+  trigger:
+    type: event
+    args:
+      condition: eventTypeIs("user_behavior") AND strEventAttr("behavior") == "提交订单"
+    context_vars:
+      user_id: strEventAttr("user_id")
+      order_id: strEventAttr("order_id")
+
+  actions:
+    - name: receive
+      type: receive
+      args:
+        - when: eventTypeIs("user_behavior") AND strEventAttr("behavior") == "已发货"
+          then: call("report")
+        - after: timestamp("3 seconds")
+          then: call("alert")
+    - name: report
+      type: stdout
+      args: str("用户%s的订单%s已经发货", strVar("user_id"), strVar("order_id"))
+      ctrl:
+        - default: finish()
+    - name: alert
+      type: stdout
+      args: str("用户%s的订单%s超过了3秒钟还没发货", strVar("user_id"), strVar("order_id"))
+      ctrl: finish()

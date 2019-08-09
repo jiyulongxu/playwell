@@ -1,0 +1,37 @@
+# 测试Service Action超时重试
+activity:
+
+  name: service_timeout_retry
+  display_name: Test service timeout retry
+  domain_id_strategy: user_id
+
+  trigger:
+    type: event
+    args:
+      condition: eventTypeIs("user_behavior")
+    context_vars:
+      time: timestamp("1 seconds")
+
+  actions:
+    - name: mock
+      type: mock
+      args:
+        request:
+          action: str("timeout")
+          time: timestamp("5 seconds")
+          echo: str("Hello world!")
+        timeout: $("time")
+      ctrl:
+        - when: resultTimeout()
+          then: call("mock")
+          context_vars:
+            time: $("time") + timestamp("1 seconds")
+        - when: resultOk()
+          then: call("show_response")
+          context_vars:
+            response: resultVar("echo")
+
+    - name: show_response
+      type: stdout
+      args: str("response")
+      ctrl: finish()

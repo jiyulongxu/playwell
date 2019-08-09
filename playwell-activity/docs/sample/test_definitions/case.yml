@@ -1,0 +1,45 @@
+activity:
+  name: test_case_action
+  display_name: test case action
+  domain_id_strategy: user_id
+  config:
+    $thread_log:
+      - spawn_success
+
+  trigger:
+    type: event
+    args:
+      condition: >
+        eventTypeIs("user_behavior") AND
+        eventAttr("behavior") == "提交订单"
+    context_vars:
+      amount: eventAttr("金额")
+      user_id: eventAttr("user_id")
+
+  actions:
+    - name: case
+      type: case
+      args:
+        - when: $("amount") > 100 AND $("amount") <= 200
+          then: call("debug_all")
+          context_vars:
+            output: str("金额大于100")
+        - when: $("amount") > 200
+          then: call("debug_all")
+          context_vars:
+            output: str("金额大于200")
+        - default: call("debug_amount")
+          context_vars:
+            output: str("金额小于100")
+
+    - name: debug_all
+      type: debug
+      args: all
+      ctrl: finish()
+
+    - name: debug_amount
+      type: debug
+      args:
+        - str("user_id")
+        - str("amount")
+      ctrl: finish()

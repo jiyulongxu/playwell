@@ -1,0 +1,28 @@
+# 测试正则函数
+activity:
+  name: test_regex
+  display_name: Test regex functions
+  domain_id_strategy: user_id
+
+  trigger:
+    type: event
+    args:
+      condition: eventTypeIs("user_behavior")
+
+  actions:
+
+    - name: test_regex
+      type: update_var
+      args:
+        match: regex.match("^\d+$", "123456")
+        not_match: regex.match("^\d+$", "123abc")
+        test_group: regex.group("^([a-zA-Z0-9]+)@gmail.com$", "chihongze@gmail.com", 1)
+        group_all: regex.groupAll("^([a-zA-Z0-9]+)@([a-z]+).com$", "chihongze@gmail.com")
+        replace_first: regex.replaceFirst("chz", "chz is a good man, chz will be a cool man", "chihongze")
+        replace_all: regex.replaceAll("chz", "chz is a good man, chz will be a cool man", "chihongze")
+      ctrl: call("stdout")
+
+    - name: stdout
+      type: stdout
+      args: context
+      ctrl: finish()

@@ -1,0 +1,34 @@
+# 测试在foreach中使用receive action，比如，当用户顺序完成一组事件后，执行某种操作。
+activity:
+  name: test_foreach_receive
+  display_name: Test foreach receive
+  domain_id_strategy: user_id
+
+  trigger:
+    type: event
+    args:
+      condition: eventTypeIs("user_behavior") AND eventAttr("behavior") == "注册成功"
+    context_vars:
+      count: 1
+
+  actions:
+
+    - name: foreach
+      type: foreach
+      args:
+        items: list("完善资料", "浏览商品", "提交订单")
+        next: call("receive")
+        finish: call("echo")
+
+    - name: receive
+      type: receive
+      args:
+        - when: eventAttr("behavior") == var("$foreach.ele")
+          then: call("foreach")
+          context_vars:
+            count: var("count") + 1
+
+    - name: echo
+      type: stdout
+      args: str("Cool user!")
+      ctrl: finish()

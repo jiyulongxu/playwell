@@ -1,0 +1,27 @@
+# 测试ClockAction
+activity:
+  name: test_clock_action
+  display_name: Test clock action
+  domain_id_strategy: user_id
+
+  trigger:
+    type: event
+    args:
+      condition: eventTypeIs("user_behavior")
+
+  actions:
+    - name: say_start
+      type: stdout
+      args: str("Game start!")
+      ctrl: call("clock")
+
+    - name: clock
+      type: clock
+      args:
+        time: dateTime().plusSeconds(3)
+      ctrl: call("say_over")
+
+    - name: say_over
+      type: stdout
+      args: str("Game over!")
+      ctrl: finish()

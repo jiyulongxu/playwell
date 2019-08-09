@@ -1,0 +1,2 @@
+"""Cloud service base
+"""

@@ -1,0 +1,38 @@
+activity:
+  name: read_excel
+  domain_id_strategy: robot
+  config:
+    $thread_log: all
+
+  trigger: eventAttr("cmd") == "read_excel"
+
+  # 声明并加载Excel Table
+  actions:
+    - name: declare_table
+      type: table.declare
+      args:
+        request:
+          table: ref("excel_table", "audience")
+          meta:
+            path: str("C:\\Users\\Administrator\\Desktop\\audience.xlsx")
+            sheet: str("audience")
+            has_title: yes
+        timeout: minutes(1)
+      ctrl:
+        - when: resultOk()
+          then: call("to_messages")
+        - default: fail()
+
+    # 将Table条目转化为消息分发
+    - name: to_messages
+      type: table.to_messages
+      args:
+        request:
+          table: ref("excel_table", "audience")
+          message_bus: str("activity_bus_rpa")
+          message_type: str("audience_notify")
+        timeout: minutes(1)
+      ctrl:
+        - when: resultOk()
+          then: finish()
+        - default: fail()
