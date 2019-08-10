@@ -390,7 +390,6 @@ Playwell既支持分布式，也支持单机，甚至也可以集成到移动设
 通过以上的描述，大家应该对Playwell会有一个大概的认识。接下来，我们会依照下面的目录，详细介绍Playwell各个部分的细节。
 
 * <a href="https://github.com/playwell-framework/playwell/blob/master/playwell-manual/UNIT_01_GettingStart.md">GettingStart</a>
-* RPA场景、单元扩展和实施
 * <a href="https://github.com/playwell-framework/playwell/blob/master/playwell-manual/UNIT_02_DomainID.md">Domain ID</a> 事件路由策略以及Domain ID Strategy的相关操作
 * <a href="https://github.com/playwell-framework/playwell/blob/master/playwell-manual/UNIT_03_ActivityDefinition-结构类型表达式.md">ActivityDefinition</a> 结构、表达式、内置函数
 * <a href="https://github.com/playwell-framework/playwell/blob/master/playwell-manual/UNIT_04_Action.md">Action</a> 同步和异步Action 内置工作单元：`case`、`foreach`、`stdout`、`compute`、`delete_var`、`sleep`、`clock`、`send`、`receive`、服务单元、`concurrent`
