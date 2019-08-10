@@ -48,8 +48,8 @@ local_service:
   - name: huawei.sms
     service: playwell_rpa.cloud.huawei.sms.BatchSendService
     config:
-      app_key: "m97WWjK5FtIV7h29jsnWCWDb4I8e"
-      app_secret: "F13400QeCtVjUQ5Vm74Sj8zIw805"
+      app_key: ""
+      app_secret: ""
       channel_id: "8819080633619"
       api_base: "https://api.rtc.huaweicloud.com:10443"
       signature: "企智未来"
