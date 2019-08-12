@@ -6,8 +6,8 @@ Service的规范非常简单，只需要满足以下几个条件：
 
 * 拥有一个可以被唯一引用的名称
 * 拥有一个可以输入请求消息的MessageBus
-* 能够处理请求消息
-* 根据请求消息中的发送者标识，定位到请求者的MessageBus，然后向请求者返回响应消息。
+* 能够处理请求消息，并计算结果
+* 根据请求消息中的发送者标识，定位到请求者的MessageBus，然后向请求者返回包含计算结果的响应消息。
 
 满足这些条件，就构成了一个服务。另外，不仅仅外接的组件被抽象为Service，Playwell调度节点也会将其自身注册成为一个Service。在Playwell中，凡是可以彼此相互通信的，必然都是Service。通过Service，可以定位到其绑定的MessageBus，进而通过MessageBus以请求和响应的方式进行通信。
 
@@ -17,7 +17,7 @@ Service的规范非常简单，只需要满足以下几个条件：
 
 它们的Service和MessageBus信息都是声明在配置文件当中的，在进程启动的时候，会将这些信息注册到元数据管理组件，接下来，它们就可以被整个集群引用了。
 
-当调度节点执行到`mail`工作单元的时候，就会去元数据管理组件查找`mail`服务的相关信息，发现它所使用的MessageBus是`mail_message_bus`，于是将一个请求消息写入到该MessageBus；而`mail`服务的进程会不断从`mail_message_bus`读取请求，根据请求参数，发出邮件，然后再根据请求消息中的发送方信息，定位到调度节点的MessageBus `activity_message_bus` 返回发送结果。
+当调度节点执行到`mail`工作单元的时候，就会去元数据管理组件查找`mail`服务的相关信息，发现它所使用的MessageBus是`mail_message_bus`，于是将一个请求写入到该MessageBus；而`mail`服务的进程会不断从`mail_message_bus`读取请求，根据请求参数，发出邮件，然后再根据请求消息中的发送方信息，定位到调度节点的MessageBus `activity_message_bus` 返回发送结果。
 
 ### 请求 / 响应
 

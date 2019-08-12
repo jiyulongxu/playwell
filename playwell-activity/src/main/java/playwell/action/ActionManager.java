@@ -195,7 +195,8 @@ public class ActionManager implements PlaywellComponent {
         .getActionDefinitionByName(activityThread.getCurrentAction());
     if (actionDefinition == null) {
       throw new RuntimeException(
-          String.format("There is no action %s in the definition", activityThread.getCurrentAction()));
+          String.format("There is no action %s in the definition",
+              activityThread.getCurrentAction()));
     }
 
     final String actionType = actionDefinition.getActionType();
