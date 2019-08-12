@@ -50,12 +50,14 @@ public class NettyHttpClientHolder implements Closeable {
     final int connectTimeout = configuration.getInt(ConfigItems.CONNECT_TIMEOUT);
     final int requestTimeout = configuration.getInt(ConfigItems.REQUEST_TIMEOUT);
     final int readTimeout = configuration.getInt(ConfigItems.READ_TIMEOUT);
+    final int maxRetry = configuration.getInt(ConfigItems.MAX_RETRY, ConfigItems.DEFAULT_MAX_RETRY);
 
     final AsyncHttpClientConfig asyncHttpClientConfig = new DefaultAsyncHttpClientConfig.Builder()
         .setEventLoopGroup(eventLoopGroup)
         .setConnectTimeout(connectTimeout)
         .setRequestTimeout(requestTimeout)
         .setReadTimeout(readTimeout)
+        .setMaxRequestRetry(maxRetry)
         .build();
 
     this.asyncHttpClient = new DefaultAsyncHttpClient(asyncHttpClientConfig);
@@ -81,6 +83,10 @@ public class NettyHttpClientHolder implements Closeable {
     String REQUEST_TIMEOUT = "request_timeout";
 
     String READ_TIMEOUT = "read_timeout";
+
+    String MAX_RETRY = "max_retry";
+
+    int DEFAULT_MAX_RETRY = 3;
   }
 
   interface EventLoopTypes {
