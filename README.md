@@ -236,13 +236,13 @@ Activity之间是彼此隔离的，ActivityThread之间也是彼此隔离的，�
 
 ### actions
 
-Actions编排了一系列的活动单元。流程触发后，Playwell会从第一个单元开始执行，然后根据执行结果和上下文变量，跳转到不同的单元、结束执行或失败退出。可以把它理解为一个有限状态机。
+Actions编排了一系列的活动单元。流程触发后，Playwell会从第一个单元开始执行，然后根据执行结果和上下文变量，跳转到不同的单元、结束执行或失败退出。actions构成了一个有限状态机。
 
 这些活动单元有Playwell内置的，比如上文中`type`为`case`的单元，就是一个条件分支的控制单元，它就像我们在很多语言中常见的那种`if (condition) ... else if (condition) ... else ...`结构，判断当前上下文变量的值是否满足条件，然后决定下一步的走向。
 
 而有些活动单元是用户自己构建的服务，比如优惠券`coupon`单元和推送`push`单元，Playwell有一套服务管理机制，用户只需要注册一下自己服务的信息，就能够在工作流中以工作单元的方式来引用它们。执行到这些单元的时候，Playwell会依据上下文来构建请求参数，并等待服务的响应。
 
-在诸如C#、Java这样的编程语言当中，像if、switch、while、for，实现流程控制的都是语言的关键字。Playwell中虽然也有这样的流程控制结构，但却没有什么"关键字"单元，它们都是普通的工作单元，背后是同一套抽象体系。用户可以基于Playwell现有的抽象基础，构建自己喜欢的控制结构。
+在诸如C#、Java这样的编程语言当中，拥有像if、switch、while、for这样的关键字来控制流程。Playwell中虽然也有这样的流程控制结构，但却没有什么"关键字"单元，它们都是普通的工作单元，背后是同一套抽象体系。用户可以基于Playwell现有的抽象基础，构建自己喜欢的控制结构。
 
 下面我们来介绍一下Action定义的各个部分。
 
@@ -293,18 +293,18 @@ ctrl编排了一系列的控制条件，用于在一个Action执行结束后，�
 
 正如上文所述，像`coupon`这样的工作单元是以服务的形式来实现的，Playwell完全通过异步消息的方式来和这些服务进行通信。当流程运行到`coupon`单元时，Playwell会向`coupon`服务发送一个请求消息，然后ActivityThread会进入waiting状态，不再被调度执行，直到coupon完成了请求，再以消息的形式向Playwell返回结果，这时ActivityThread才会再次被调度。依据返回结果，执行ctrl里面的分支，决定下一步走向。
 
-如果在定义中不设置await，await默认为true。当await为true的时候，只有得到结果消息，ActivityThread才会继续执行，而有些时候我们并不关心执行结果，只需要请求一下相关服务，然后继续往下执行。此时就可以把await属性设置为false，比如上文中的`push`单元，ActivityThread会向`push`服务发送一条请求消息，接下来不会等待`push`返回结果消息，就直接跳转到`waiting_buy`单元。
+如果在定义中不设置await，await默认为true。当await为true的时候，只有得到结果消息，ActivityThread才会继续执行，但其实有些时候我们并不关心执行结果，只需要请求一下相关服务，然后继续往下执行。此时就可以把await属性设置为false，比如上文中的`push`单元，ActivityThread会向`push`服务发送一条请求消息，接下来不会等待`push`返回结果消息，就直接跳转到`waiting_buy`单元。
 
-对服务的请求消息中也会带有`await`属性，如果服务发现`await`属性为false，那么就可以选择不再给playwell传递返回结果，以避免不必要的传输开销。
+对服务的请求消息中也会带有`ignoreResult`属性，如果服务发现`ignoreResult`属性为false，那么就可以选择不再给playwell传递返回结果，以避免不必要的传输开销。
 
 ### 上下文变量
 
 在上述例子中，我们使用了很多上下文变量，比如`user_id`、`goods_id`、`visit_count`等等，上下文变量的作用域是当前的ActivityThread实例，上下文变量有两大重要作用：
 
 - 一是在action之间传递数据，比如一个action的结果可以通过上下文变量作为另一个action的参数。
-- 二是表示当前业务所处的状态，决定流程下一步的走向或者纯粹表示状态供数据分析使用。
+- 二是表示当前业务所处的状态，决定流程下一步的走向，或者纯粹表示状态供数据分析使用。
 
-Playwell在底层默认使用RocksDB来持久化存储ActivityThread相关元信息以及上下文变量，如果进程重启，这些状态是不会丢失的。
+Playwell在底层默认使用RocksDB来持久化存储ActivityThread相关元信息以及上下文变量。在RocksDB配置得当的情况下，如果进程重启，这些状态是不会丢失的。
 
 上下文变量不适合存储尺寸比较大的值，只适合存储一些基本类型，比如数字、较短的字符串、布尔、元素较少的列表和字典。如果业务涉及到尺寸较大的值，那么可以使用诸如数据库、文件甚至HDFS、S3等外部存储，在上下文变量中只保留一个像是路径之类的引用，然后异步调用专门的服务去处理这些值。至于变量的具体长度上限需要参照使用的存储引擎，如果使用默认的RocksDB引擎，那么一个ActivityThread所有变量的总长度应该尽可能不超过4KB，这是RocksDB默认的读取页大小，当然，也可以根据业务场景来调整该选项。
 
@@ -322,7 +322,7 @@ Playwell在底层默认使用RocksDB来持久化存储ActivityThread相关元信
 
 如果小明访问了一次后十天再也没有什么操作，那么会触发`waiting_visit_event`单元中`after…then`所指定的操作，结束整个ActivityThread，并释放相关资源。当小明下次再访问，就会触发一个新的ActivityThread，`visit_count`也会从头开始计数。
 
-receive单元中，after条件是可选的，如果不指定，那么这个ActivityThread可能就会一直常驻系统，等待事件发生。尽管在Playwell中每个ActivityThread所占用的资源非常少，等待操作也不会阻塞任何操作系统底层的线程或者影响其它的ActivityThread调度，但当多数情况下等待条件不能满足，比如大多数用户只是看一次商品，不会再继续看，就会造成大量的ActivityThread"泄露"，浪费存储空间或者对调度产生不必要的压力，因此，为等待操作指定一个after总是一个好的实践。
+receive单元中，after条件是可选的，如果不指定，那么这个ActivityThread可能就会一直常驻系统，等待事件发生。尽管在Playwell中每个ActivityThread所占用的资源非常少，等待操作也不会阻塞任何操作系统底层的线程或者影响其它的ActivityThread调度，但当大量的等待条件不能满足，比如大多数用户只是看一次商品，不会再继续看，就会造成大量的ActivityThread"泄露"，浪费存储空间或者对调度产生不必要的压力，因此，为等待操作指定一个after总是一个好的实践。
 
 `coupon`单元会依据服务注册信息来发送请求消息，并在计时器注册一个1分钟后的时钟消息。这些完成之后，调度器就不会再对该ActivityThread做什么，转而去处理其它的ActivityThread，只有等下一条属于该ActivityThread的消息到来：
 
@@ -362,7 +362,7 @@ receive单元中，after条件是可选的，如果不指定，那么这个Activ
 
 * 事件经过一定的路由规则，写入对应的Kafka Partition，路由规则会确保同一个Domain ID的事件写入到同一个Partition中。
 * 每个Playwell处理节点各自订阅一个Kafka Partition，由于前面的路由规则，同一个ActivityThread所有消息都会在同一个处理节点中进行处理，其所有状态会存储在该节点，除非发生迁移。
-* 像ActivityDefinition、各种服务等相关元数据都是由各种MetaDataService进行存储，这是一个抽象的组件，默认是基于MySQL实现。通常，在Playwell节点启动的时候，它们会去MetaDataService存储中读取所有的元数据，然后缓存在自己本地，这使得在以后的运行中，获取元数据的消耗基本忽略不计，然后在每次事件循环之前会去检查元数据有无更新，如果有，会刷新自己本地的缓存。
+* 像ActivityDefinition、服务等相关元数据都是由各类MetaDataService进行存储，这是一系列抽象的组件，默认是基于MySQL实现。通常，在Playwell节点启动的时候，它们会去MetaDataService存储中读取所有的元数据，然后缓存在自己本地，这使得在以后的运行中，获取元数据的消耗基本忽略不计，然后在每次事件循环之前会去检查元数据有无更新，如果有，会刷新自己本地的缓存。
 * Playwell会通过异步消息，来调度各种外围组件的执行，包括云服务、移动设备、中间件等等。这些请求和响应消息在分布式环境中通常也会通过Apache Kafka来传递，当前版本的Playwell没有实现自己的消息通信渠道。
 * Playwell可以在每次ActivityThread发生了新的状态变化时把当前状态和上下文变量同步到诸如Elasticsearch、Hive、HBase等各种数据存储中。这样做有两个目的：一个是业务角度，可以获取非常详尽的状态趋势用于做数据分析；再一个是从技术角度，相当于同时记录了所有的链路，方便排查问题，只需要搜索一下相关Activity的某个Domain ID，就可以准确得知某个用户的某项业务是在哪里失败的。
 

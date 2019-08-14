@@ -1,6 +1,5 @@
 package playwell.message.bus.codec;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -158,7 +157,7 @@ public class MapMessageCodec implements MessageCodec {
           attr.getString(ServiceRequestMessage.Attributes.ACTION),
           data.getString(Message.Fields.SENDER),
           data.getString(Message.Fields.RECEIVER),
-          attr.get(ServiceRequestMessage.Attributes.ARGS, Collections.emptyMap()),
+          attr.get(ServiceRequestMessage.Attributes.ARGS, null),
           attr.getBoolean(ServiceRequestMessage.Attributes.IGNORE_RESULT)
       );
     });

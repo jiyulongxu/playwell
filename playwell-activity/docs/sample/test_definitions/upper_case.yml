@@ -1,0 +1,21 @@
+activity:
+  name: upper_case
+  domain_id_strategy: user_id
+
+  trigger: eventTypeIs("user_behavior")
+
+  actions:
+    - name: upper_case
+      args:
+        request: str("abcdefg")
+        timeout: minutes(1)
+      ctrl:
+        - when: resultOk()
+          context_vars:
+            text: resultVar("text")
+          then: call("stdout")
+        - default: fail()
+
+    - name: stdout
+      args: var("text")
+      ctrl: finish()

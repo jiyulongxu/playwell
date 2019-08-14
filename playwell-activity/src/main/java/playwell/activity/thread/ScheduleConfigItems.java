@@ -18,6 +18,8 @@ public enum ScheduleConfigItems implements ConfigItem {
 
   MONITORS("$monitors", Collections.emptyList()),
 
+  KEEP_SLEEP("$keep_sleep", false),
+
   ;
 
   private final String key;

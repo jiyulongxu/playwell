@@ -876,6 +876,9 @@ public class PlaywellActivityThreadScheduler implements ActivityThreadScheduler 
         markActivityThreadFinished(activityThreadPool, activityThread);
       } else if (failureCtrl.getCtrlType() == ActionCtrlType.CALL) {
         markGotoNext(activityThreadPool, activityThread, failureCtrl);
+      } else if (failureCtrl.getCtrlType() == ActionCtrlType.REPAIRING) {
+        RepairActionCtrlInfo repairActionCtrlInfo = (RepairActionCtrlInfo) failureCtrl;
+        waitingRepair(repairActionCtrlInfo.getProblem(), activityThreadPool, activityThread);
       }
     } else {
       if (MapUtils.isNotEmpty(ctrlInfo.getContextVars())) {

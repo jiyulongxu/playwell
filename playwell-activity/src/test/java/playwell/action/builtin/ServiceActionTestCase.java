@@ -97,6 +97,26 @@ public class ServiceActionTestCase extends PlaywellBaseTestCase {
     Assert.assertEquals(new Integer(3), resultOptional.get());
   }
 
+  @Test
+  public void testBaseService() throws Exception {
+    final Activity activity = spawn(
+        "docs/sample/test_definitions/upper_case.yml",
+        new TestUserBehaviorEvent(
+            "1",
+            "test",
+            Collections.emptyMap(),
+            CachedTimestamp.nowMilliseconds()
+        )
+    );
+    TimeUnit.SECONDS.sleep(2L);
+    final Optional<ActivityThread> activityThreadOptional = TestActivityThreadStatusListener
+        .getThread(activity.getId(), "1");
+    Assert.assertTrue(activityThreadOptional.isPresent());
+    ActivityThread activityThread = activityThreadOptional.get();
+    Assert.assertEquals(ActivityThreadStatus.FINISHED, activityThread.getStatus());
+    Assert.assertEquals("ABCDEFG", activityThread.getContext().get("text"));
+  }
+
   @After
   public void tearDown() {
     cleanStandardActivityRunnerIntergrationPlan(true);

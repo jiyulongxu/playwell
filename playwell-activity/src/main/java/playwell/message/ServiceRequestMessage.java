@@ -23,7 +23,7 @@ public class ServiceRequestMessage extends Message implements ActivityThreadMess
   // Action Name
   private final String action;
 
-  // 调用参数，可能是List，也可能是Map
+  // 调用参数，可能是List，也可能是Map，也可能是单个value
   private final Object args;
 
   // 忽略结果

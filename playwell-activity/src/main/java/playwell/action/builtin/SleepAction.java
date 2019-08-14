@@ -5,6 +5,7 @@ import java.util.function.Consumer;
 import playwell.action.ActionInstanceBuilder;
 import playwell.action.AsyncAction;
 import playwell.activity.thread.ActivityThread;
+import playwell.activity.thread.ScheduleConfigItems;
 import playwell.clock.Clock;
 import playwell.clock.ClockMessage;
 import playwell.common.EasyMap;
@@ -76,9 +77,17 @@ public class SleepAction extends AsyncAction {
       return Result.ignore();
     }
 
-    ClockMessage clockMessage = (ClockMessage) message;
+    final ClockMessage clockMessage = (ClockMessage) message;
     if (!getName().equals(clockMessage.getAction()) ||
         clockMessage.getTimestamp() < getActivityThread().getCreatedOn()) {
+      return Result.ignore();
+    }
+
+    final EasyMap config = new EasyMap(getActivity().getConfig());
+    final boolean keepSleep = config.getWithConfigItem(ScheduleConfigItems.KEEP_SLEEP);
+
+    if (keepSleep) {
+      sendRequest();
       return Result.ignore();
     }
 

@@ -9,7 +9,7 @@ Service的规范非常简单，只需要满足以下几个条件：
 * 能够处理请求消息，并计算结果
 * 根据请求消息中的发送者标识，定位到请求者的MessageBus，然后向请求者返回包含计算结果的响应消息。
 
-满足这些条件，就构成了一个服务。另外，不仅仅外接的组件被抽象为Service，Playwell调度节点也会将其自身注册成为一个Service。在Playwell中，凡是可以彼此相互通信的，必然都是Service。通过Service，可以定位到其绑定的MessageBus，进而通过MessageBus以请求和响应的方式进行通信。
+满足这些条件，就构成了一个Service。另外，不仅仅外接的组件被抽象为Service，Playwell调度节点也会将其自身注册成为一个Service。在Playwell中，凡是可以彼此相互通信的，必然都是Service。通过Service，可以定位到其绑定的MessageBus，进而通过MessageBus以请求和响应的方式进行通信。
 
 下面，我们通过举例子，来描述Service的整个工作过程。
 
@@ -21,7 +21,7 @@ Service的规范非常简单，只需要满足以下几个条件：
 
 ### 请求 / 响应
 
-请求 / 响应消息是Service之间通信的基石，它们都拥有统一规范的格式。
+请求 / 响应消息是Service之间通信的基石，它们都拥有统一的格式。
 
 **请求消息**
 
@@ -290,7 +290,208 @@ activity:
 
 这样的框架，我们称其为Service Container。它能够自动完成MessageBus和服务的注册、构建以及返回响应消息等工作，只暴露出一个非常简单的Hook需要用户自行实现，即接收请求 -> 返回结果。
 
+Playwell目前实现了Java和Python两种语言的Service Container。这里先介绍Java版本的Service Container。
+
+要实现一个服务，只需要将`playwell-activity.jar`包引入到classpath中，然后继承`playwell.activity.service.BasePlaywellService`这个抽象类即可：
+
+```java
+package myservice;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.stream.Collectors;
+import playwell.common.Result;
+import playwell.message.ServiceRequestMessage;
+
+public class UpperCaseService extends BasePlaywellService {
+
+  @Override
+  protected Collection<Result> handleRequests(Collection<ServiceRequestMessage> messages) {
+    return messages.stream().map(
+        msg -> Result.okWithData(Collections.singletonMap(
+            "text", ((String) msg.getArgs()).toUpperCase())
+        )).collect(Collectors.toList());
+  }
+}
+```
+
+只需要关注请求和返回结果，其余的都不必担心。
+
+将上述Service打包，比如`myservice.jar`
+
+接下来，通过配置文件来声明这个service以及Service Container：
+
+`playwell_service.yml`
+
+```yaml
+playwell:
+  tz: "Asia/Shanghai"
+
+  resources:
+    - class: playwell.clock.CachedTimestamp
+      period: 100
+
+    - class: playwell.storage.jdbc.DataSourceManager
+      datasource:
+        - name: playwell
+          driver: com.mysql.cj.jdbc.Driver
+          url: 'jdbc:mysql://localhost:3306/playwell?useSSL=false&user=playwell&password=123456&useUnicode=true&characterEncoding=utf8&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai'
+          max_active: 100
+          initial_size: 10
+          max_idle: 20
+          max_wait: 5000
+          remove_abandoned: true
+          
+    - class: playwell.http.NettyHttpClientHolder
+      event_loop: nio
+      n_threads: 2
+      connect_timeout: 10000
+      request_timeout: 10000
+      read_timeout: 10000
+    
+    - class: playwell.http.HttpServiceManager
+      services:
+        - host: 127.0.0.1
+          port: 1923
+          min_threads: 2
+          max_threads: 8
+          
+  message_bus_manager:
+    class: playwell.message.bus.MySQLMessageBusManager
+    datasource: playwell
+    buses:
+      - name: service_bus
+        class: playwell.message.bus.HttpMessageBus
+        url: "http://127.0.0.1:1923/bus"
+          
+  # 一个Service Container进程可以注册多个服务
+  # 共享同一个MessageBus
+  # Service Container会自动将消息路由到目标服务
+  service_meta_manager:
+    class: playwell.service.MySQLServiceMetaManager
+    datasource: playwell
+    local_services:
+      - name: upper_case
+        class: myservice.UpperCaseService
+        message_bus: service_bus
+        
+   service_runner:
+    input_message_bus: service_bus
+    sleep_time: 10
+    max_fetch_num: 5000
+    max_error_num: 10
+    listeners:
+      - message_bus_manager
+      - service_meta_manager
+```
+
+然后启动服务：
+
+```shell
+java -classpath ./playwell-activity.jar:./myservice.jar playwell.launcher.Playwell service -config ./playwell_service.yml -log4j log4j2service.xml
+```
+
+接下来，就可以在ActivityDefinition当中引用这个服务了：
+
+```yaml
+activity:
+  name: upper_case
+  domain_id_strategy: user_id
+
+  trigger: eventTypeIs("user_behavior")
+
+  actions:
+    - name: upper_case
+      args:
+        request: str("abcdefg")
+        timeout: minutes(1)
+      ctrl:
+        - when: resultOk()
+          context_vars:
+            text: resultVar("text")
+          then: call("stdout")
+        - default: fail()
+
+    - name: stdout
+      args: var("text")
+      ctrl: finish()
+```
+
+### 配置Service Meta Manager
+
+所有服务信息都是通过ServiceMetaManager组件进行管理，该组件需要在配置文件中进行配置：
+
+```yaml
+  service_meta_manager:
+    # 组件类型
+    class: playwell.service.MySQLServiceMetaManager
+    # 使用的数据源
+    datasource: playwell
+    # 本地节点需要注册和初始化的服务
+    local_services:
+      - name: upper_case  # 服务名称
+        class: myservice.UpperCaseService  # 服务类型
+        message_bus: service_bus  # 输入消息的MessageBus
+        ... # other service config
+```
+
+class为组件类型，内置支持的是`playwell.service.MySQLServiceMetaManager`
+
+datasource是数据源，通过名称引用`resources`中所声明的数据源。是属于MySQLServiceMetaManager类型的特定配置。
+
+local\_services 为当前节点需要注册的本地服务。每一项包含了通用的配置：
+
+* `name` 服务名称
+* `class` 服务类型
+* `message_bus` 输入消息的MessageBus，通常，在一个Service Container进程，配置的都是相同的，即service runner的input message bus。
+
+除上述配置外，还可以包含各个服务自身需要的配置。在系统启动的时候，这些服务会被初始化，并自动注册到系统当中供其它节点引用。如果配置有变更，那么也会自动在存储介质中进行更新。
+
+### 配置 Service Runner
+
+Service runner是Service container中的消息循环。会从input message bus中源源不断地接收消息，然后将消息分发到注册的各个local service。然后再收集这些服务的响应，传递到相应的调度节点。
+
+```yaml
+   service_runner:
+    input_message_bus: service_bus  # input message bus
+    sleep_time: 10  # 每次消息循环的sleep time
+    max_fetch_num: 5000  # 每次循环最大获取消息数目
+    max_error_num: 10  # 最大持续错误数目，如果每次连续发生10次错误，进程会终止
+    listeners:  # 这些组件会在每次循环的时候刷新自己的元数据。
+      - message_bus_manager
+      - service_meta_manager
+```
+
 ### 基本操作
+
+我们可以用客户端或API来进行更多关于Service的操作。
 
 #### 注册
 
+通常，Service container就是利用该API来将自身的local service注册到集群。
+
+```shell
+playwell service register --name myservice --message_bus message_bus --config config.json
+```
+
+#### 获取所有服务信息
+
+获取集群的所有服务信息：
+
+```shell
+playwell service get_all
+```
+
+#### 获取某个指定服务的信息
+
+```shell
+playwell service get --name huawei.sms
+```
+
+#### 删除某个服务
+
+```shell
+playwell service delete --name huawei.sms
+```
+
+**只有确定服务没有被引用的时候才可以删除，否则会出现错误**

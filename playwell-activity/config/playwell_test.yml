@@ -102,6 +102,9 @@ playwell:
       - name: multiply
         class: playwell.service.MultiplyService
         message_bus: local_service_bus
+      - name: upper_case
+        class: playwell.service.UpperCaseService
+        message_bus: local_service_bus
 
   activity_thread_scheduler:
     listeners:

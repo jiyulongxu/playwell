@@ -9,7 +9,7 @@
 1. 如何把相关事件路由到具体的ActivityThread，因为每个ActivityThread都是顺序同步的处理事件，我们不可能把所有事件分别路由到每个ActivityThread进行匹配。
 2. 使用什么样的方式来对系统中具体某个ActivityThread进行唯一标识。
 
-Domain ID Strategy解决了这些问题，我们前面的都是通过一个名称，比如`user_id`来引用它，但它其实是由两个表达式组成的：第一个表达式是`cond_expression`，返回布尔值，对事件进行过滤；第二个表达式是`domain_id_expression`，用于从事件中提取Domain ID。
+Domain ID Strategy解决了这些问题。我们前面的都是通过一个名称，比如`user_id`来引用它，但它其实是由两个表达式组成的：第一个表达式是`cond_expression`，返回布尔值，对事件进行过滤；第二个表达式是`domain_id_expression`，用于从事件中提取Domain ID。
 
 路由的过程，事件会先经过`cond_expression`，如果返回true，那么会通过`domain_id_expression`从事件属性中计算出Domain ID。若是该Domain ID对应的ActivityThread存在，那么会将事件加入到该ActivityThread的邮箱，该ActivityThread稍后也会被调度，处理自己邮箱中的事件；如果不存在，则会尝试去计算Trigger的触发条件，满足条件，会创建一个新的ActivityThread。
 
@@ -43,9 +43,9 @@ playwell domain add --name 'user_id_goods_id' \
 
 **ActivityThread的定位**
 
-同一个Activity下不会存在重复的Domain ID。
+同一个Activity下，只能存在具有唯一DomainID的ActivityThread。
 
-不同的Activity下可以存在重复的Domain ID。
+但不同Activity中，却可以存在具有相同DomainID的ActivityThread。
 
 比如，一个Activity是要在用户注册后发送一封欢迎邮件，另一个Activity是要增加注册计数，它们可以共用`user_id`这个Domain  ID Strategy，然后在同一个用户注册后，各自拥有独立执行的ActivityThread完成各自的业务逻辑，互不干扰。
 
