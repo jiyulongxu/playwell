@@ -250,3 +250,58 @@ Operation - ActivityDefinitionName - ActivityID - DomainID - ActivityThreadStatu
 * `Context` 当前所有的上下文变量值
 
 通过以上日志，我们就可以很清晰的了解当前ActivityThread的执行状态。
+
+### 暂停定时任务
+
+在playwell中，通过`sleep`和`clock`单元，可以实现像Crontab这样的定时任务。比如，每隔一分钟执行一次：
+
+```yaml
+activity:
+  name: test_sleep
+  domain_id_strategy: cmd
+  
+  trigger: eventAttr("cmd") == "test_sleep"
+  
+  actions:
+    - name: stdout
+      args: str("Hello, World")
+      ctrl: call("sleep")
+      
+    - name: sleep
+      args:
+        time: minutes(1)
+      ctrl: call("stdout")
+```
+
+从明天起，每天早上九点半执行：
+
+```yaml
+activity:
+  name: test_clock
+  domain_id_strategy: cmd
+  
+  trigger: eventAttr("cmd") == "test_clock"
+  
+  actions:
+    - name: clock
+      args:
+        time: dateTime().plusDays(1).withHourOfDay(9).withMinuteOfHour(30)
+     	ctrl: call("stdout")
+     	
+    - name: stdout
+      args: str("Hello, Clock")
+      ctrl: call("clock")
+```
+
+对这种定时活动进行暂停会有个问题，就是当活动暂停后，当时间点到达时，时钟消息就会被丢弃，导致再次恢复执行的时候，因为缺少事件触发，ActivityThread就会一直保持waiting状态。
+
+因此，如果想要对这种时钟任务进行暂停，就不能使用一般的暂停方法，而是需要保持活动正常执行，然后让`sleep`和`clock`这两个单元不断的将时间点推迟。
+
+通过设置Activity的`$keep_sleep`选项可以达到这个目的：
+
+````shell
+playwell activity put_config_item --id 11 --key '$keep_sleep' --type bool --value true
+````
+
+这样当时钟消息到达时，sleep单元和clock单元会重新注册新的时间点，比如下一个一分钟，并忽略当前时钟消息，直到该配置项被移除或者设置为false。
+
